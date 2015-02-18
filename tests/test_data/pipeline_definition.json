@@ -1,0 +1,77 @@
+{
+  "objects" : [
+    {
+      "id" : "Default",
+      "scheduleType" : "cron",
+      "failureAndRerunMode" : "CASCADE",
+      "schedule" : { "ref" : "PipelayerSchedule" },
+      "pipelineLogUri" : "#{myS3LogDir}",
+      "role" : "DataPipelineDefaultRole",
+      "resourceRole" : "DataPipelineDefaultResourceRole"
+    },
+    {
+      "id" : "PipelayerShellCommandActivity",
+      "command" : "(cd ${INPUT1_STAGING_DIR} && chmod +x run && ./run) > ${OUTPUT1_STAGING_DIR}/stdout.txt",
+      "runsOn" : { "ref" : "PipelayerEC2Resource" },
+      "input"  : { "ref" : "PipelayerS3InputLocation" },
+      "output" : { "ref" : "PipelayerS3OutputLocation" },
+      "type" : "ShellCommandActivity",
+      "stage" : "true"
+    },
+    {
+      "id" : "PipelayerSchedule",
+      "startDateTime" : "#{myStartDateTime}",
+      "type" : "Schedule",
+      "period" : "#{mySchedulePeriod}"
+    },
+    {
+      "id" : "PipelayerEC2Resource",
+      "terminateAfter" : "#{myTerminateAfter}",
+      "instanceType" : "t1.micro",
+      "type" : "Ec2Resource"
+    },
+    {
+      "id" : "PipelayerS3InputLocation",
+      "directoryPath" : "#{myS3InputDir}",
+      "type" : "S3DataNode"
+    },
+    {
+      "id" : "PipelayerS3OutputLocation",
+      "directoryPath" : "#{myS3OutputDir}/#{format(@scheduledStartTime, 'YYYY-MM-dd_HHmmss')}",
+      "type" : "S3DataNode"
+    }
+  ],
+  "parameters" : [
+    {
+      "id": "myS3InputDir",
+      "description": "S3 directory where the run executable lives",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "id": "myS3OutputDir",
+      "description": "S3 directory where output files are collected",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "id": "myS3LogDir",
+      "description": "S3 log folder",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "id": "myStartDateTime",
+      "description": "Instant for the first run; Pipelayer will add multiples of mySchedulePeriod to ensure this instant is in the future",
+      "type": "String"
+    },
+    {
+      "id": "mySchedulePeriod",
+      "description": "How often to run, such as '1 hours'",
+      "type": "String"
+    },
+    {
+      "id": "myTerminateAfter",
+      "default": "#{format(minusMinutes(#{mySchedulePeriod}, 10))}",
+      "description": "duration after which the run should be terminated",
+      "type": "String"
+    }
+  ]
+}
