@@ -1,28 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Program entry point"""
+"""
+The core Pipelayer API.
+"""
 
 from __future__ import print_function
 
-import argparse
-import sys
+import re
 import os
 import json
 import logging
-import contextlib
-
 from urlparse import urlparse
-from pipelayer import metadata
-from pipelayer.connection import DataPipelineConnection
+from copy import deepcopy
+from datetime import datetime, timedelta
 
 from awscli.customizations.datapipeline import translator
 from boto import connect_s3
 from boto.s3.key import Key as S3Key
 
-from pprint import pprint
-from copy import deepcopy
-from datetime import datetime, timedelta
-import re
+from pipelayer import util
+
 
 PIPELINE_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 PIPELINE_FREQUENCY_RE = re.compile(r'(?P<number>\d+) (?P<unit>\w+s)')
@@ -35,12 +32,217 @@ It is used by Pipelayer to validate pipeline definitions.
     """.strip()
 }
 
-@contextlib.contextmanager
-def cd(new_path):
-    saved_path = os.getcwd()
-    os.chdir(new_path)
-    yield
-    os.chdir(saved_path)
+
+class Pipelayer(object):
+    """
+    A collection of :class:`Pipeline`s sharing a definition template.
+    """
+    def __init__(self, conn, template_path, s3_conn=None):
+        """
+        Create an empty Pipelayer object.
+
+        *conn* is a DataPipelineConnection used to manipulate added pipelines,
+        *s3_conn* is an S3Connection used to upload pipeline tasks to S3,
+        and *template_path* is the path to a local file containing the
+        template pipeline definition.
+        """
+        self.conn = conn
+        self.s3_conn = s3_conn
+        if self.s3_conn is None:
+            self.s3_conn = connect_s3()
+        template_path = os.path.normpath(template_path)
+        self.template = definition_from_file(template_path)
+        self.pipelines = {}
+
+    def add_pipeline(self, dirpath):
+        """
+        Load a new py:class::`Pipeline` object based on the files contained in
+        *dirpath*.
+        """
+        pipeline = Pipeline(self.conn, self.s3_conn, self.template, dirpath)
+        self.pipelines[pipeline.name] = pipeline
+        return pipeline
+
+    def are_pipelines_valid(self):
+        """
+        Returns `True` if all pipeline definition validate with AWS.
+        """
+        return all([p.is_valid() for p in self.pipelines.values()])
+
+    def validate(self):
+        """
+        Synonym for :meth:`are_pipelines_valid`.
+        """
+        return self.are_pipelines_valid()
+
+    def upload(self):
+        """
+        Upload files to S3 corresponding to each pipeline and its tasks.
+
+        Returns True is successful.
+        """
+        return all([p.upload() for p in self.pipelines.values()])
+
+    def activate(self):
+        """
+        Activate all pipeline definitions,
+        deleting existing pipeline if needed.
+
+        Returns True if successful.
+        """
+        if not self.are_pipelines_valid():
+            logging.error("Not activating pipelines due to validation errors.")
+            return False
+        return all([p.activate() for p in self.pipelines.values()])
+
+
+class Pipeline(object):
+    """
+    A class defining a single pipeline definition and associated tasks.
+    """
+    def __init__(self, conn, s3_conn, template, dirpath):
+        """
+        Create a Pipeline based on definition dict *template*.
+
+        *dirpath* is a directory containing a 'values.json' file,
+        a 'run' executable, and a 'tasks' directory.
+        *conn* is a DataPipelineConnection and *s3_conn* is an S3Connection.
+        """
+        self.conn = conn
+        self.s3_conn = s3_conn
+        self.dirpath = os.path.normpath(dirpath)
+        self.definition = template.copy()
+        self.unique_id = 'unique_id'
+        values_path = os.path.join(dirpath, 'values.json')
+        with open(values_path) as f:
+            decoded = json.load(f)
+        metadata = decoded.get('metadata', {})
+        self.values = decoded.get('values', {})
+        self.name = metadata.get('name', os.path.basename(dirpath))
+        self.description = metadata.get('description', None)
+        timestamp = self.values['myStartDateTime']
+        period = self.values['mySchedulePeriod']
+        adjusted_timestamp = adjusted_to_future(timestamp, period)
+        self.values['myStartDateTime'] = adjusted_timestamp
+
+    def api_objects(self):
+        """
+        Return a dict containing the pipeline objects in AWS API format.
+        """
+        d = deepcopy(self.definition)
+        return translator.definition_to_api_objects(d)
+
+    def api_parameters(self):
+        """
+        Return a dict containing the pipeline parameters in AWS API format.
+        """
+        d = deepcopy(self.definition)
+        return translator.definition_to_api_parameters(d)
+
+    def api_values(self):
+        """
+        Return a dict containing the pipeline param values in AWS API format.
+        """
+        d = {'values': self.values}
+        return translator.definition_to_parameter_values(d)
+
+    def create(self):
+        """
+        Create a pipeline in AWS if it does not already exist.
+
+        Returns the pipeline id.
+        """
+        response = self.conn.create_pipeline(self.name, self.unique_id,
+                                             self.description)
+        return response['pipelineId']
+
+    def is_valid(self):
+        """
+        Returns `True` if the pipeline definition validates to AWS.
+        """
+        response = self.conn.create_pipeline(**PIPELAYER_STUB_PARAMS)
+        pipeline_id = response["pipelineId"]
+        response = self.conn.validate_pipeline_definition(
+            self.api_objects(), pipeline_id,
+            self.api_parameters(), self.api_values())
+        self._log_validation_messages(response)
+        if response['errored']:
+            return False
+        else:
+            logging.info("Pipeline '{}' is valid".format(self.name))
+            return True
+
+    def upload(self):
+        """
+        Uploads the contents of `dirpath` to S3.
+
+        The destination path in S3 is determined by 'myS3InputDirectory'
+        in the 'values.json' file for this pipeline.
+        Existing contents of the 'tasks' subdirectory are deleted.
+
+        Returns True if successful.
+        """
+        s3_dir = self.values['myS3InputDir']
+        bucket_path, input_dir = bucket_and_path(s3_dir)
+        bucket = self.s3_conn.get_bucket(bucket_path)
+
+        remote_task_path = os.path.join(input_dir, 'tasks')
+        existing_task_keys = bucket.list(prefix=remote_task_path)
+        existing_tasks = [key.name for key in existing_task_keys]
+        bucket.delete_keys(existing_tasks)
+        logging.info("Deleted from bucket '{}': {}"
+                     .format(bucket_path, existing_tasks))
+
+        with util.cd(self.dirpath):
+            for root, dirs, files in os.walk('.'):
+                for f in files:
+                    filepath = os.path.join(root, f)
+                    k = S3Key(bucket)
+                    k.key = os.path.normpath(os.path.join(input_dir, filepath))
+                    k.set_contents_from_filename(filepath)
+                    logging.info('Copied {} to {}'
+                                 .format(os.path.abspath(filepath),
+                                         os.path.normpath(
+                                             os.path.join(s3_dir, filepath))))
+        return True
+
+    def activate(self):
+        """
+        Activate this pipeline definition in AWS.
+
+        Deletes the existing pipeline if it has previously been activated.
+
+        Returns True if successful.
+        """
+        pipeline_id = self.create()
+        existing_definition = definition_from_id(self.conn, pipeline_id)
+        state = state_from_id(self.conn, pipeline_id)
+        if existing_definition == self.definition:
+            return True
+        elif state != 'PENDING':
+            logging.info("Deleting pipeline with id {}".format(pipeline_id))
+            self.conn.delete_pipeline(pipeline_id)
+            return self.activate()
+        logging.debug("Putting pipeline definition")
+        self.conn.put_pipeline_definition(self.api_objects(),
+                                          pipeline_id,
+                                          self.api_parameters(),
+                                          self.api_values())
+        logging.info("Activating pipeline with id {}".format(pipeline_id))
+        self.conn.activate_pipeline(pipeline_id)
+        return True
+
+    def _log_validation_messages(self, response):
+        for container in response['validationWarnings']:
+            logging.warning("Warnings in validation response for %s",
+                            container['id'])
+            for message in container['warnings']:
+                logging.warning(message)
+        for container in response['validationErrors']:
+            logging.error("Errors in validation response for %s",
+                          container['id'])
+            for message in container['errors']:
+                logging.error(message)
 
 
 def bucket_and_path(s3_uri):
@@ -110,7 +312,7 @@ def fetch_field_value(aws_response, field_name):
                 if k != 'key':
                     return v
     raise ValueError("Did not find a field called {} in response {}"
-                     .format(field_name, response))
+                     .format(field_name, aws_response))
 
 
 def state_from_id(conn, pipeline_id):
@@ -140,230 +342,3 @@ def definition_from_id(conn, pipeline_id):
     """
     response = conn.get_pipeline_definition(pipeline_id)
     return translator.api_to_definition(response)
-
-
-class Pipelayer(object):
-    """
-    A collection of :py:class::`Pipeline`s sharing a definition template.
-    """
-    def __init__(self, conn, template_path, s3_conn=None):
-        """
-        Create an empty Pipelayer object.
-
-        *conn* is a DataPipelineConnection used to manipulate added pipelines,
-        *s3_conn* is an S3Connection used to upload pipeline tasks to S3,
-        and *template_path* is the path to a local file containing the
-        template pipeline definition.
-        """
-        self.conn = conn
-        self.s3_conn = s3_conn
-        if self.s3_conn is None:
-            self.s3_conn = connect_s3()
-        template_path = os.path.normpath(template_path)
-        self.template = definition_from_file(template_path)
-        self.pipelines = {}
-
-    def add_pipeline(self, dirpath):
-        """
-        Load a new py:class::`Pipeline` object based on the files contained in
-        *dirpath*.
-        """
-        pipeline = Pipeline(self.conn, self.s3_conn, self.template, dirpath)
-        self.pipelines[pipeline.name] = pipeline
-        return pipeline
-
-    def are_pipelines_valid(self):
-        """
-        Returns `True` if all pipeline definition validate with AWS.
-        """
-        return all([p.is_valid() for p in self.pipelines.values()])
-
-    def upload(self):
-        """
-        Upload files to S3 corresponding to each pipeline and its tasks.
-        """
-        for p in self.pipelines.values():
-            p.upload()
-
-    def activate(self):
-        """
-        Activate all pipeline definitions,
-        deleting existing pipeline if needed.
-        """
-        if not self.are_pipelines_valid():
-            logging.error("Not activating pipelines due to validation errors.")
-            return False
-        for p in self.pipelines.values():
-            p.activate()
-
-
-class Pipeline(object):
-    """
-    A class defining a single pipeline definition and associated tasks.
-    """
-    def __init__(self, conn, s3_conn, template, dirpath):
-        """
-        Create a Pipeline based on definition dict *template*.
-
-        *dirpath* is a directory containing a 'values.json' file,
-        a 'run' executable, and a 'tasks' directory.
-        *conn* is a DataPipelineConnection and *s3_conn* is an S3Connection.
-        """
-        self.conn = conn
-        self.s3_conn = s3_conn
-        self.dirpath = os.path.normpath(dirpath)
-        self.definition = template.copy()
-        self.unique_id = 'unique_id'
-        values_path = os.path.join(dirpath, 'values.json')
-        with open(values_path) as f:
-            decoded = json.load(f)
-        metadata = decoded.get('metadata', {})
-        self.values = decoded.get('values', {})
-        self.name = metadata.get('name', os.path.basename(dirpath))
-        self.description = metadata.get('description', None)
-        timestamp = self.values['myStartDateTime']
-        period = self.values['mySchedulePeriod']
-        adjusted_timestamp = adjusted_to_future(timestamp, period)
-        self.values['myStartDateTime'] = adjusted_timestamp
-        pprint(self.values)
-
-    def api_objects(self):
-        """
-        Return a dict containing the pipeline objects in AWS API format.
-        """
-        d = deepcopy(self.definition)
-        return translator.definition_to_api_objects(d)
-
-    def api_parameters(self):
-        """
-        Return a dict containing the pipeline parameters in AWS API format.
-        """
-        d = deepcopy(self.definition)
-        return translator.definition_to_api_parameters(d)
-
-    def api_values(self):
-        """
-        Return a dict containing the pipeline param values in AWS API format.
-        """
-        d = {'values': self.values}
-        return translator.definition_to_parameter_values(d)
-
-    def create(self):
-        """
-        Create a pipeline in AWS if it does not already exist.
-
-        Returns the pipeline id.
-        """
-        response = self.conn.create_pipeline(self.name, self.unique_id,
-                                             self.description)
-        return response['pipelineId']
-
-    def _log_validation_messages(self, response):
-        for container in response['validationWarnings']:
-            logging.warning("Warnings in validation response for %s",
-                            container['id'])
-            for message in container['warnings']:
-                logging.warning(message)
-        for container in response['validationErrors']:
-            logging.error("Errors in validation response for %s",
-                          container['id'])
-            for message in container['errors']:
-                logging.error(message)
-
-    def is_valid(self):
-        """
-        Returns `True` if the pipeline definition validates to AWS.
-        """
-        response = self.conn.create_pipeline(**PIPELAYER_STUB_PARAMS)
-        pipeline_id = response["pipelineId"]
-        response = self.conn.validate_pipeline_definition(
-            self.api_objects(), pipeline_id,
-            self.api_parameters(), self.api_values())
-        self._log_validation_messages(response)
-        return not response['errored']
-
-    def upload(self):
-        """
-        Uploads the contents of `dirpath` to S3.
-
-        The destination path in S3 is determined by 'myS3InputDirectory'
-        in the 'values.json' file for this pipeline.
-        """
-        bucket_path, input_dir = bucket_and_path(self.values['myS3InputDir'])
-        bucket = self.s3_conn.get_bucket(bucket_path)
-        with cd(self.dirpath):
-            for root, dirs, files in os.walk('.'):
-                for f in files:
-                    k = S3Key(bucket)
-                    k.key = os.path.join(input_dir, root, f)
-                    k.set_contents_from_filename(os.path.join(root, f))
-
-    def activate(self):
-        """
-        Activate this pipeline definition in AWS.
-
-        Deletes the existing pipeline if it has previously been activated.
-        """
-        pipeline_id = self.create()
-        existing_definition = definition_from_id(self.conn, pipeline_id)
-        state = state_from_id(self.conn, pipeline_id)
-        if existing_definition == self.definition:
-            return True
-        elif state != 'PENDING':
-            print("State is: ", state)
-            logging.info("Deleting pipeline with id {}".format(pipeline_id))
-            self.conn.delete_pipeline(pipeline_id)
-            return self.activate()
-        logging.debug("Putting pipeline definition")
-        self.conn.put_pipeline_definition(self.api_objects(),
-                                          pipeline_id,
-                                          self.api_parameters(),
-                                          self.api_values())
-        logging.info("Activating pipeline with id {}".format(pipeline_id))
-        self.conn.activate_pipeline(pipeline_id)
-
-# def main(argv):
-#     """Program entry point.
-
-#     :param argv: command-line arguments
-#     :type argv: :class:`list`
-#     """
-#     author_strings = []
-#     for name, email in zip(metadata.authors, metadata.emails):
-#         author_strings.append('Author: {0} <{1}>'.format(name, email))
-
-#     epilog = '''
-# {project} {version}
-
-# {authors}
-# URL: <{url}>
-# '''.format(
-#         project=metadata.project,
-#         version=metadata.version,
-#         authors='\n'.join(author_strings),
-#         url=metadata.url)
-
-#     arg_parser = argparse.ArgumentParser(
-#         prog=argv[0],
-#         formatter_class=argparse.RawDescriptionHelpFormatter,
-#         description=metadata.description,
-#         epilog=epilog)
-#     arg_parser.add_argument(
-#         '-V', '--version',
-#         action='version',
-#         version='{0} {1}'.format(metadata.project, metadata.version))
-
-#     arg_parser.parse_args(args=argv[1:])
-
-#     print(epilog
-
-#     return) 0
-
-
-# def entry_point():
-#     """Zero-argument entry point for use with setuptools/distribute."""
-#     raise SystemExit(main(sys.argv))
-
-
-# if __name__ == '__main__':
-#     entry_point()

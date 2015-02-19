@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
-from pytest import raises
 
-# The parametrize function is generated, so this doesn't work:
-#
-#     from pytest.mark import parametrize
-#
 import pytest
 import os
 
 import pipelayer
-from pipelayer import metadata, Pipelayer
-from boto.datapipeline import connect_to_region
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -34,20 +27,23 @@ def test_adjusted_to_future():
 
 @pytest.fixture
 def pipeline_description():
-    return {u'description': u'my description',
-            u'fields': [{u'key': u'@pipelineState', u'stringValue': u'PENDING'},
-                        {u'key': u'@creationTime', u'stringValue': u'2015-02-11T21:17:10'},
-                        {u'key': u'@sphere', u'stringValue': u'PIPELINE'},
-                        {u'key': u'uniqueId', u'stringValue': u'pipelayertest1'},
-                        {u'key': u'@accountId', u'stringValue': u'543715240000'},
-                        {u'key': u'description', u'stringValue': u'my description'},
-                        {u'key': u'name', u'stringValue': u'Pipelayer test'},
-                        {u'key': u'pipelineCreator', u'stringValue': u'AIDAIWZQRURDXI4UOOOO'},
-                        {u'key': u'@id', u'stringValue': u'df-07437251YGRXOY19OOOO'},
-                        {u'key': u'@userId', u'stringValue': u'AIDAIWZQRURDXI4UKOOOO'}],
-            u'name': u'Pipelayer test',
-            u'pipelineId': u'df-07437251YGRXOY19OOOO',
-            u'tags': []}
+    return {
+        u'description': u'my description',
+        u'fields': [
+            {u'key': u'@pipelineState', u'stringValue': u'PENDING'},
+            {u'key': u'@creationTime', u'stringValue': u'2015-02-11T21:17:10'},
+            {u'key': u'@sphere', u'stringValue': u'PIPELINE'},
+            {u'key': u'uniqueId', u'stringValue': u'pipelayertest1'},
+            {u'key': u'@accountId', u'stringValue': u'543715240000'},
+            {u'key': u'description', u'stringValue': u'my description'},
+            {u'key': u'name', u'stringValue': u'Pipelayer test'},
+            {u'key': u'pipelineCreator', u'stringValue': u'AIDAIWZQRURDOOOOO'},
+            {u'key': u'@id', u'stringValue': u'df-07437251YGRXOY19OOOO'},
+            {u'key': u'@userId', u'stringValue': u'AIDAIWZQRURDXI4UKOOOO'}],
+        u'name': u'Pipelayer test',
+        u'pipelineId': u'df-07437251YGRXOY19OOOO',
+        u'tags': [],
+    }
 
 
 def test_pipeline_state(pipeline_description):
@@ -73,28 +69,3 @@ def test_pipeline_state(pipeline_description):
 
 #     def test_activate(self, pl):
 #         pl.activate()
-
-# class TestMain(object):
-#     @parametrize('helparg', ['-h', '--help'])
-#     def test_help(self, helparg, capsys):
-#         with raises(SystemExit) as exc_info:
-#             main(['progname', helparg])
-#         out, err = capsys.readouterr()
-#         # Should have printed some sort of usage message. We don't
-#         # need to explicitly test the content of the message.
-#         assert 'usage' in out
-#         # Should have used the program name from the argument
-#         # vector.
-#         assert 'progname' in out
-#         # Should exit with zero return code.
-#         assert exc_info.value.code == 0
-
-#     @parametrize('versionarg', ['-V', '--version'])
-#     def test_version(self, versionarg, capsys):
-#         with raises(SystemExit) as exc_info:
-#             main(['progname', versionarg])
-#         out, err = capsys.readouterr()
-#         # Should print out version.
-#         assert err == '{0} {1}\n'.format(metadata.project, metadata.version)
-#         # Should exit with zero return code.
-#         assert exc_info.value.code == 0
