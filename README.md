@@ -84,3 +84,4 @@ need to run the `activate` subcommand again. Because active pipelines can't
 be modified, the `activate` command will delete the existing pipeline and
 create a new one in its place. The run history for the previous pipeline will
 be discarded.
+=======
