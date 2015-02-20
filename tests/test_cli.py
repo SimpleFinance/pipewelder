@@ -6,7 +6,7 @@ from pytest import raises
 #     from pytest.mark import parametrize
 #
 import pytest
-parametrize = pytest.mark.parametrize
+parametrize = pytest.mark.parametrize  # NOPEP8
 
 import os
 
@@ -54,6 +54,7 @@ class TestMain(object):
             main(['progname', versionarg])
         out, err = capsys.readouterr()
         # Should print out version.
-        assert err == '{0} {1}\n'.format(metadata.project, metadata.version)
+        expected = '{0} {1}\n'.format(metadata.project, metadata.version)
+        assert (out == expected or err == expected)
         # Should exit with zero return code.
         assert exc_info.value.code == 0

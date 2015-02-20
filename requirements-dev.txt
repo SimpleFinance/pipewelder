@@ -2,16 +2,16 @@
 --requirement requirements.txt
 
 # Testing
-pytest==2.5.1
+pytest==2.6.4
 py==1.4.19
 mock==1.0.1
 tox==1.8.1
 
 # Linting
-flake8==2.1.0
-mccabe==0.2.1
-pep8==1.4.6
-pyflakes==0.7.3
+flake8==2.3.0
+mccabe==0.3
+pep8==1.6.2
+pyflakes==0.8.1
 
 # Documentation
 Sphinx==1.2
@@ -21,5 +21,5 @@ MarkupSafe==0.18
 Pygments==1.6
 
 # Miscellaneous
-Paver==1.2.1
+Paver==1.2.3
 colorama==0.2.7

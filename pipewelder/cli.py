@@ -14,10 +14,10 @@ import boto.datapipeline
 from six.moves import configparser
 from glob import glob
 
+from pipewelder import metadata, util, Pipelayer
+
 import logging
 logging.basicConfig(level="INFO")
-
-from pipewelder import metadata, util, Pipelayer
 
 
 CONFIG_DEFAULTS = {
@@ -110,7 +110,8 @@ def pipewelder_configs(filename=None, defaults=None):
     """
     dirname = os.path.dirname(os.path.abspath(filename))
     defaults = defaults or {}
-    defaults = dict(CONFIG_DEFAULTS.items() + defaults.items())
+    defaults = dict(list(CONFIG_DEFAULTS.items()) +
+                    list(defaults.items()))
     config = configparser.SafeConfigParser(defaults)
     if filename is not None and not os.path.exists(filename):
         raise IOError("No file found at '{}'".format(filename))

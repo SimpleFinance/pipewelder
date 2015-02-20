@@ -5,13 +5,6 @@ The core Pipelayer API.
 
 from __future__ import print_function
 
-import six
-if six.PY2:
-    from urlparse import urlparse
-else:
-    from urllib.parse import urlparse
-
-
 import re
 import os
 import json
@@ -19,12 +12,17 @@ import logging
 from copy import deepcopy
 from datetime import datetime, timedelta
 
-from awscli.customizations.datapipeline import translator
+from pipewelder import translator
 from boto import connect_s3
 from boto.s3.key import Key as S3Key
 
 from pipewelder import util
 
+import six
+if six.PY2:
+    from urlparse import urlparse
+else:
+    from urllib.parse import urlparse
 
 PIPELINE_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 PIPELINE_FREQUENCY_RE = re.compile(r'(?P<number>\d+) (?P<unit>\w+s)')
@@ -254,8 +252,8 @@ def bucket_and_path(s3_uri):
     """
     Return a bucket name and key path from *s3_uri*.
 
-    >>> bucket_and_path('s3://pipewelder-example-bucket/pipewelder-test/inputs')
-    ('pipewelder-example-bucket', 'pipewelder-test/inputs')
+    >>> bucket_and_path('s3://pipewelder-bucket/pipewelder-test/inputs')
+    ('pipewelder-bucket', 'pipewelder-test/inputs')
     """
     uri = urlparse(s3_uri)
     return (uri.netloc, uri.path[1:])
@@ -307,9 +305,9 @@ def fetch_field_value(aws_response, field_name):
 
     The returned value is the second item from a dict with 'key' *field_name*.
 
-    >>> r = {u'fields': [{u'key': u'someKey', u'stringValue': u'someValue'}]}
+    >>> r = {'fields': [{'key': 'someKey', 'stringValue': 'someValue'}]}
     >>> fetch_field_value(r, 'someKey')
-    u'someValue'
+    'someValue'
     """
     for container in aws_response['fields']:
         if container['key'] == field_name:
