@@ -35,14 +35,14 @@ It is used by Pipelayer to validate pipeline definitions.
 
 class Pipelayer(object):
     """
-    A collection of :class:`Pipeline`s sharing a definition template.
+    A collection of Pipelines sharing a definition template.
     """
     def __init__(self, conn, template_path, s3_conn=None):
         """
-        Create an empty Pipelayer object.
-
-        *conn* is a DataPipelineConnection used to manipulate added pipelines,
-        *s3_conn* is an S3Connection used to upload pipeline tasks to S3,
+        *conn* is a :class:`boto.datapipeline.layer1.DataPipelineConnection`
+        instance used to manipulate added pipelines,
+        *s3_conn* is a :class:`boto.s3.connection.S3Connection`
+        used to upload pipeline tasks to S3,
         and *template_path* is the path to a local file containing the
         template pipeline definition.
         """
@@ -56,7 +56,7 @@ class Pipelayer(object):
 
     def add_pipeline(self, dirpath):
         """
-        Load a new py:class::`Pipeline` object based on the files contained in
+        Load a new :class:`Pipeline` object based on the files contained in
         *dirpath*.
         """
         pipeline = Pipeline(self.conn, self.s3_conn, self.template, dirpath)
@@ -65,7 +65,7 @@ class Pipelayer(object):
 
     def are_pipelines_valid(self):
         """
-        Returns `True` if all pipeline definition validate with AWS.
+        Returns ``True`` if all pipeline definition validate with AWS.
         """
         return all([p.is_valid() for p in self.pipelines.values()])
 
@@ -79,7 +79,7 @@ class Pipelayer(object):
         """
         Upload files to S3 corresponding to each pipeline and its tasks.
 
-        Returns True is successful.
+        Returns ``True`` is successful.
         """
         return all([p.upload() for p in self.pipelines.values()])
 
@@ -88,7 +88,7 @@ class Pipelayer(object):
         Activate all pipeline definitions,
         deleting existing pipeline if needed.
 
-        Returns True if successful.
+        Returns ``True`` if successful.
         """
         if not self.are_pipelines_valid():
             logging.error("Not activating pipelines due to validation errors.")
@@ -158,7 +158,7 @@ class Pipeline(object):
 
     def is_valid(self):
         """
-        Returns `True` if the pipeline definition validates to AWS.
+        Returns ``True`` if the pipeline definition validates to AWS.
         """
         response = self.conn.create_pipeline(**PIPELAYER_STUB_PARAMS)
         pipeline_id = response["pipelineId"]
@@ -180,7 +180,7 @@ class Pipeline(object):
         in the 'values.json' file for this pipeline.
         Existing contents of the 'tasks' subdirectory are deleted.
 
-        Returns True if successful.
+        Returns ``True`` if successful.
         """
         s3_dir = self.values['myS3InputDir']
         bucket_path, input_dir = bucket_and_path(s3_dir)
@@ -212,7 +212,7 @@ class Pipeline(object):
 
         Deletes the existing pipeline if it has previously been activated.
 
-        Returns True if successful.
+        Returns ``True`` if successful.
         """
         pipeline_id = self.create()
         existing_definition = definition_from_id(self.conn, pipeline_id)

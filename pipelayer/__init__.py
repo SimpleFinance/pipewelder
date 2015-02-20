@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Scheduled task execution on top of AWS Data Pipeline"""
+"""
+Scheduled task execution on top of AWS Data Pipeline
+"""
 
 from pipelayer import metadata
 from pipelayer.core import *
