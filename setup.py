@@ -244,18 +244,16 @@ setup_dict = dict(
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
-        'Topic :: Documentation',
         'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: System :: Installation/Setup',
-        'Topic :: System :: Software Distribution',
     ],
     packages=find_packages(exclude=(TESTS_DIRECTORY,)),
     install_requires=[
-        # your module dependencies
+        'boto>=2.36.0',
+        'awscli>=1.7',
     ] + python_version_specific_requires,
     # Allow tests to be run with `python setup.py test'.
     tests_require=[
@@ -269,10 +267,6 @@ setup_dict = dict(
         'console_scripts': [
             'pipelayer = pipelayer.main:entry_point'
         ],
-        # if you have a gui, use this
-        # 'gui_scripts': [
-        #     'pipelayer_gui = pipelayer.gui:entry_point'
-        # ]
     }
 )
 
