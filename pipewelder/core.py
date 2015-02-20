@@ -172,7 +172,7 @@ class Pipeline(object):
         if response['errored']:
             return False
         else:
-            logging.info("Pipeline '{}' is valid".format(self.name))
+            logging.info("Pipeline '{0}' is valid".format(self.name))
             return True
 
     def upload(self):
@@ -193,7 +193,7 @@ class Pipeline(object):
         existing_task_keys = bucket.list(prefix=remote_task_path)
         existing_tasks = [key.name for key in existing_task_keys]
         bucket.delete_keys(existing_tasks)
-        logging.info("Deleted from bucket '{}': {}"
+        logging.info("Deleted from bucket '{0}': {1}"
                      .format(bucket_path, existing_tasks))
 
         with util.cd(self.dirpath):
@@ -203,7 +203,7 @@ class Pipeline(object):
                     k = S3Key(bucket)
                     k.key = os.path.normpath(os.path.join(input_dir, filepath))
                     k.set_contents_from_filename(filepath)
-                    logging.info('Copied {} to {}'
+                    logging.info('Copied {0} to {1}'
                                  .format(os.path.abspath(filepath),
                                          os.path.normpath(
                                              os.path.join(s3_dir, filepath))))
@@ -223,7 +223,7 @@ class Pipeline(object):
         if existing_definition == self.definition:
             return True
         elif state != 'PENDING':
-            logging.info("Deleting pipeline with id {}".format(pipeline_id))
+            logging.info("Deleting pipeline with id {0}".format(pipeline_id))
             self.conn.delete_pipeline(pipeline_id)
             return self.activate()
         logging.debug("Putting pipeline definition")
@@ -231,7 +231,7 @@ class Pipeline(object):
                                           pipeline_id,
                                           self.api_parameters(),
                                           self.api_values())
-        logging.info("Activating pipeline with id {}".format(pipeline_id))
+        logging.info("Activating pipeline with id {0}".format(pipeline_id))
         self.conn.activate_pipeline(pipeline_id)
         return True
 
@@ -272,7 +272,7 @@ def parse_period(period):
     """
     parts = PIPELINE_FREQUENCY_RE.match(period)
     if not parts:
-        raise ValueError("'{}' cannot be parsed as a period".format(period))
+        raise ValueError("'{0}' cannot be parsed as a period".format(period))
     parts = parts.groupdict()
     kwargs = {parts['unit']: int(parts['number'])}
     return timedelta(**kwargs)
@@ -314,7 +314,7 @@ def fetch_field_value(aws_response, field_name):
             for (k, v) in container.items():
                 if k != 'key':
                     return v
-    raise ValueError("Did not find a field called {} in response {}"
+    raise ValueError("Did not find a field called {0} in response {1}"
                      .format(field_name, aws_response))
 
 

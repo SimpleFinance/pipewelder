@@ -19,7 +19,7 @@ def data_path(path):
 
 def test_adjusted_to_future():
     now = datetime.utcnow()
-    timestamp = "{}-01-01T00:00:00".format(now.year)
+    timestamp = "{0}-01-01T00:00:00".format(now.year)
     adjusted = core.adjusted_to_future(timestamp, "1 days")
     target_dt = datetime(year=now.year, month=now.month, day=(now.day + 1))
     assert adjusted == target_dt.strftime(core.PIPELINE_DATETIME_FORMAT)
