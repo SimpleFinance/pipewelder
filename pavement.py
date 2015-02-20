@@ -8,7 +8,7 @@ import time
 import subprocess
 
 # Import parameters from the setup file.
-sys.path.append('.')
+sys.path.insert(0, os.path.abspath('.'))
 from setup import (
     setup_dict, get_project_files, print_success_message,
     print_failure_message, _lint, _test, _test_all,

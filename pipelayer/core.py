@@ -6,11 +6,17 @@ The core Pipelayer API.
 
 from __future__ import print_function
 
+import six
+if six.PY2:
+    from urlparse import urlparse
+else:
+    from urllib.parse import urlparse
+
+
 import re
 import os
 import json
 import logging
-from urlparse import urlparse
 from copy import deepcopy
 from datetime import datetime, timedelta
 

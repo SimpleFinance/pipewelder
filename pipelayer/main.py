@@ -9,9 +9,9 @@ from __future__ import print_function
 import argparse
 import os
 import sys
-import boto
+import boto.datapipeline
 
-from ConfigParser import SafeConfigParser
+from six.moves import configparser
 from glob import glob
 
 import logging
@@ -55,15 +55,18 @@ URL: <{url}>
         '-V', '--version',
         action='version',
         version='{0} {1}'.format(metadata.project, metadata.version))
+
     subparsers = parser.add_subparsers(dest='parser',
                                        help='sub-command help')
-
-    s = subparsers.add_parser('upload', help='upload help')
-    s.set_defaults(method='upload')
-    s = subparsers.add_parser('activate', help='activate help')
-    s.set_defaults(method='activate')
-    s = subparsers.add_parser('validate', help='validate help')
-    s.set_defaults(method='validate')
+    subparsers.add_parser(
+        'validate', help="validate pipeline definitions with AWS"
+    ).set_defaults(method='validate')
+    subparsers.add_parser(
+        'upload', help="upload pipeline files to S3"
+    ).set_defaults(method='upload')
+    subparsers.add_parser(
+        'activate', help="activate all defined pipelines"
+    ).set_defaults(method='activate')
 
     args = parser.parse_args(args=argv[1:])
 
@@ -108,7 +111,7 @@ def pipelayer_configs(filename=None, defaults=None):
     dirname = os.path.dirname(os.path.abspath(filename))
     defaults = defaults or {}
     defaults = dict(CONFIG_DEFAULTS.items() + defaults.items())
-    config = SafeConfigParser(defaults)
+    config = configparser.SafeConfigParser(defaults)
     if filename is not None and not os.path.exists(filename):
         raise IOError("No file found at '{}'".format(filename))
     config.read(filename)

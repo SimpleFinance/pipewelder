@@ -10,7 +10,7 @@ parametrize = pytest.mark.parametrize
 
 import os
 
-from pipelayer.main import *
+from pipelayer.main import pipelayer_configs, main, metadata
 
 import logging
 logging.basicConfig(level=logging.INFO)

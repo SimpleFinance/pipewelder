@@ -3,7 +3,7 @@
 import pytest
 import os
 
-import pipelayer
+from pipelayer import core
 from datetime import datetime
 
 import logging
@@ -20,9 +20,9 @@ def data_path(path):
 def test_adjusted_to_future():
     now = datetime.utcnow()
     timestamp = "{}-01-01T00:00:00".format(now.year)
-    adjusted = pipelayer.adjusted_to_future(timestamp, "1 days")
+    adjusted = core.adjusted_to_future(timestamp, "1 days")
     target_dt = datetime(year=now.year, month=now.month, day=(now.day + 1))
-    assert adjusted == target_dt.strftime(pipelayer.PIPELINE_DATETIME_FORMAT)
+    assert adjusted == target_dt.strftime(core.PIPELINE_DATETIME_FORMAT)
 
 
 @pytest.fixture
@@ -47,25 +47,5 @@ def pipeline_description():
 
 
 def test_pipeline_state(pipeline_description):
-    state = pipelayer.fetch_field_value(pipeline_description, '@pipelineState')
+    state = core.fetch_field_value(pipeline_description, '@pipelineState')
     assert state == 'PENDING'
-
-
-# class TestPipelayer(object):
-
-#     @pytest.fixture
-#     def pl(self):
-#         conn = connect_to_region('us-west-2')
-#         pl = Pipelayer(conn, data_path('pipeline_definition.json'))
-#         pl.add_pipeline(data_path('echoer'))
-#         return pl
-
-#     def test_validation(self, pl):
-#         valid = pl.are_pipelines_valid()
-#         assert valid == True
-
-#     def test_upload(self, pl):
-#         pl.upload()
-
-#     def test_activate(self, pl):
-#         pl.activate()

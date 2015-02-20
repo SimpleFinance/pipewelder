@@ -1,5 +1,7 @@
 # Pipelayer
 
+![A worker welding a pipe](welder.jpg)
+
 Pipelayer is a framework that provides a command-line tool and Python API
 to manage [AWS Data Pipeline](http://aws.amazon.com/datapipeline/) jobs from flat files.
 Simple uses it as a cron-like job scheduler.
