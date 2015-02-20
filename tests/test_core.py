@@ -3,7 +3,7 @@
 import pytest
 import os
 
-from pipelayer import core
+from pipewelder import core
 from datetime import datetime
 
 import logging
@@ -33,7 +33,7 @@ def pipeline_description():
             {u'key': u'@pipelineState', u'stringValue': u'PENDING'},
             {u'key': u'@creationTime', u'stringValue': u'2015-02-11T21:17:10'},
             {u'key': u'@sphere', u'stringValue': u'PIPELINE'},
-            {u'key': u'uniqueId', u'stringValue': u'pipelayertest1'},
+            {u'key': u'uniqueId', u'stringValue': u'pipeweldertest1'},
             {u'key': u'@accountId', u'stringValue': u'543715240000'},
             {u'key': u'description', u'stringValue': u'my description'},
             {u'key': u'name', u'stringValue': u'Pipelayer test'},

@@ -1,5 +1,5 @@
 Pipelayer Util
 ==============
 
-.. automodule:: pipelayer.util
+.. automodule:: pipewelder.util
    :members:

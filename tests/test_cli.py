@@ -10,7 +10,7 @@ parametrize = pytest.mark.parametrize
 
 import os
 
-from pipelayer.main import pipelayer_configs, main, metadata
+from pipewelder.cli import pipewelder_configs, main, metadata
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -23,8 +23,8 @@ def data_path(path):
     return os.path.join(DATA_DIR, path)
 
 
-def test_pipelayer_configs():
-    configs = pipelayer_configs(data_path('pipelayer.cfg'))
+def test_pipewelder_configs():
+    configs = pipewelder_configs(data_path('pipewelder.cfg'))
     assert configs == [{
         "name": "Pipelayer",
         "dirs": ["echoer"],

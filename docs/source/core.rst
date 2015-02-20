@@ -1,5 +1,5 @@
 Pipelayer Core API
 ==================
 
-.. automodule:: pipelayer.core
+.. automodule:: pipewelder.core
    :members:

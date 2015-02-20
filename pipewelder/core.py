@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 The core Pipelayer API.
@@ -24,7 +23,7 @@ from awscli.customizations.datapipeline import translator
 from boto import connect_s3
 from boto.s3.key import Key as S3Key
 
-from pipelayer import util
+from pipewelder import util
 
 
 PIPELINE_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -255,8 +254,8 @@ def bucket_and_path(s3_uri):
     """
     Return a bucket name and key path from *s3_uri*.
 
-    >>> bucket_and_path('s3://pipelayer-example-bucket/pipelayer-test/inputs')
-    ('pipelayer-example-bucket', 'pipelayer-test/inputs')
+    >>> bucket_and_path('s3://pipewelder-example-bucket/pipewelder-test/inputs')
+    ('pipewelder-example-bucket', 'pipewelder-test/inputs')
     """
     uri = urlparse(s3_uri)
     return (uri.netloc, uri.path[1:])

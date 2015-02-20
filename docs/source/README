@@ -1,5 +1,5 @@
-Run `sphinx-apidoc -o . ../../pipelayer' in this directory.
+Run `sphinx-apidoc -o . ../../pipewelder' in this directory.
 
-This will generate `modules.rst' and `pipelayer.rst'.
+This will generate `modules.rst' and `pipewelder.rst'.
 
 Then include `modules.rst' in your `index.rst' file.

@@ -1,5 +1,5 @@
 Pipelayer Command-Line Interface
 ================================
 
-.. automodule:: pipelayer.main
+.. automodule:: pipewelder.main
    :members:

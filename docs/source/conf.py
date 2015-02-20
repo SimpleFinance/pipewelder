@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 # Import project metadata
-from pipelayer import metadata
+from pipewelder import metadata
 
 # -- General configuration ----------------------------------------------------
 

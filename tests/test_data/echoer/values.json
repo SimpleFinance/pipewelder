@@ -6,9 +6,9 @@
   },
 
   "values" : {
-    "myS3InputDir": "s3://pipelayer-example-bucket/echoer/inputs",
-    "myS3OutputDir": "s3://pipelayer-example-bucket/echoer/outputs",
-    "myS3LogDir": "s3://pipelayer-example-bucket/echoer/logs",
+    "myS3InputDir": "s3://pipewelder-example-bucket/echoer/inputs",
+    "myS3OutputDir": "s3://pipewelder-example-bucket/echoer/outputs",
+    "myS3LogDir": "s3://pipewelder-example-bucket/echoer/logs",
     "myStartDateTime": "2015-01-01T00:00:02",
     "mySchedulePeriod": "15 minutes",
     "myTerminateAfter": "10 minutes"

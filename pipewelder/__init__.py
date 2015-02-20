@@ -3,9 +3,9 @@
 """
 Scheduled task execution on top of AWS Data Pipeline
 """
-import pipelayer.connection
-from pipelayer import metadata
-from pipelayer.core import *
+import pipewelder.connection
+from pipewelder import metadata
+from pipewelder.core import *
 
 __version__ = metadata.version
 __author__ = metadata.authors[0]

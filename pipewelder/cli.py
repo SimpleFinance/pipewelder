@@ -17,7 +17,7 @@ from glob import glob
 import logging
 logging.basicConfig(level="INFO")
 
-from pipelayer import metadata, util, Pipelayer
+from pipewelder import metadata, util, Pipelayer
 
 
 CONFIG_DEFAULTS = {
@@ -79,8 +79,8 @@ URL: <{url}>
     if 'AWS_DEFAULT_REGION' in os.environ:
         defaults['region'] = os.environ['AWS_DEFAULT_REGION']
 
-    config_path = os.path.exists('pipelayer.cfg') and 'pipelayer.cfg' or None
-    configs = pipelayer_configs(config_path, defaults)
+    config_path = os.path.exists('pipewelder.cfg') and 'pipewelder.cfg' or None
+    configs = pipewelder_configs(config_path, defaults)
     print("Reading configuration from {}".format(config_path))
 
     for config in configs:
@@ -104,7 +104,7 @@ def entry_point():
     raise SystemExit(main(sys.argv))
 
 
-def pipelayer_configs(filename=None, defaults=None):
+def pipewelder_configs(filename=None, defaults=None):
     """
 
     """

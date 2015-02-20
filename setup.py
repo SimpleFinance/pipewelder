@@ -35,16 +35,16 @@ except ImportError:
 sys.path.append('.')
 
 ## Constants
-CODE_DIRECTORY = 'pipelayer'
+CODE_DIRECTORY = 'pipewelder'
 DOCS_DIRECTORY = 'docs'
 TESTS_DIRECTORY = 'tests'
 PYTEST_FLAGS = ['--doctest-modules']
 
 # Import metadata. Normally this would just be:
 #
-#     from pipelayer import metadata
+#     from pipewelder import metadata
 #
-# However, when we do this, we also import `pipelayer/__init__.py'. If this
+# However, when we do this, we also import `pipewelder/__init__.py'. If this
 # imports names from some other modules and these modules have third-party
 # dependencies that need installing (which happens after this file is run), the
 # script will crash. What we do instead is to load the metadata module by path
@@ -185,8 +185,8 @@ def _test():
     import pytest
     # Run the doctests
     import doctest
-    import pipelayer
-    doctest.testmod(pipelayer.core)
+    import pipewelder
+    doctest.testmod(pipewelder.core)
     # This runs the unit tests.
     # It also runs doctest, but only on the modules in TESTS_DIRECTORY.
     return pytest.main(PYTEST_FLAGS + [TESTS_DIRECTORY])
@@ -263,7 +263,7 @@ setup_dict = dict(
     zip_safe=False,  # don't use eggs
     entry_points={
         'console_scripts': [
-            'pipelayer = pipelayer.main:entry_point'
+            'pipewelder = pipewelder.cli:entry_point'
         ],
     }
 )

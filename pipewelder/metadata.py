@@ -5,7 +5,7 @@ Information describing the project.
 """
 
 # The package name, which is also the "UNIX name" for the project.
-package = 'pipelayer'
+package = 'pipewelder'
 project = "Pipelayer"
 project_no_spaces = project.replace(' ', '')
 version = '0.1'
@@ -15,4 +15,4 @@ authors_string = ', '.join(authors)
 emails = ['klukas@simple.com']
 license = 'Apache V2.0'
 copyright = '2015 Simple Finance Technology Corporation'
-url = 'http://github.com/jklukas/pipelayer'
+url = 'http://github.com/jklukas/pipewelder'
