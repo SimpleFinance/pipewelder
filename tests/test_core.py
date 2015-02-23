@@ -36,11 +36,11 @@ def pipeline_description():
             {u'key': u'uniqueId', u'stringValue': u'pipeweldertest1'},
             {u'key': u'@accountId', u'stringValue': u'543715240000'},
             {u'key': u'description', u'stringValue': u'my description'},
-            {u'key': u'name', u'stringValue': u'Pipelayer test'},
+            {u'key': u'name', u'stringValue': u'Pipewelder test'},
             {u'key': u'pipelineCreator', u'stringValue': u'AIDAIWZQRURDOOOOO'},
             {u'key': u'@id', u'stringValue': u'df-07437251YGRXOY19OOOO'},
             {u'key': u'@userId', u'stringValue': u'AIDAIWZQRURDXI4UKOOOO'}],
-        u'name': u'Pipelayer test',
+        u'name': u'Pipewelder test',
         u'pipelineId': u'df-07437251YGRXOY19OOOO',
         u'tags': [],
     }

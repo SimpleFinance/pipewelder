@@ -1,4 +1,4 @@
-Pipelayer Core API
+Pipewelder Core API
 ==================
 
 .. automodule:: pipewelder.core

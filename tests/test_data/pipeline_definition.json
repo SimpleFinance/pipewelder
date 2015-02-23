@@ -4,44 +4,54 @@
       "id" : "Default",
       "scheduleType" : "cron",
       "failureAndRerunMode" : "CASCADE",
-      "schedule" : { "ref" : "PipelayerSchedule" },
+      "schedule" : { "ref" : "PipewelderSchedule" },
       "pipelineLogUri" : "#{myS3LogDir}",
       "role" : "DataPipelineDefaultRole",
       "resourceRole" : "DataPipelineDefaultResourceRole"
     },
     {
-      "id" : "PipelayerShellCommandActivity",
+      "id" : "PipewelderShellCommandActivity",
       "command" : "(cd ${INPUT1_STAGING_DIR} && chmod +x run && ./run) > ${OUTPUT1_STAGING_DIR}/stdout.txt",
-      "runsOn" : { "ref" : "PipelayerEC2Resource" },
-      "input"  : { "ref" : "PipelayerS3InputLocation" },
-      "output" : { "ref" : "PipelayerS3OutputLocation" },
+      "runsOn" : { "ref" : "PipewelderEC2Resource" },
+      "input"  : { "ref" : "PipewelderS3InputLocation" },
+      "output" : { "ref" : "PipewelderS3OutputLocation" },
       "type" : "ShellCommandActivity",
       "stage" : "true"
     },
     {
-      "id" : "PipelayerSchedule",
+      "id" : "PipewelderSchedule",
       "startDateTime" : "#{myStartDateTime}",
       "type" : "Schedule",
       "period" : "#{mySchedulePeriod}"
     },
     {
-      "id" : "PipelayerEC2Resource",
+      "id" : "PipewelderEC2Resource",
       "terminateAfter" : "#{myTerminateAfter}",
       "instanceType" : "t1.micro",
       "type" : "Ec2Resource"
     },
     {
-      "id" : "PipelayerS3InputLocation",
+      "id" : "PipewelderS3InputLocation",
       "directoryPath" : "#{myS3InputDir}",
       "type" : "S3DataNode"
     },
     {
-      "id" : "PipelayerS3OutputLocation",
+      "id" : "PipewelderS3OutputLocation",
       "directoryPath" : "#{myS3OutputDir}/#{format(@scheduledStartTime, 'YYYY-MM-dd_HHmmss')}",
       "type" : "S3DataNode"
     }
   ],
   "parameters" : [
+    {
+      "id": "myName",
+      "description": "A unique name for this pipeline",
+      "type": "String"
+    },
+    {
+      "id": "myDescription",
+      "description": "A description associated with this pipeline in AWS",
+      "type": "String"
+    },
     {
       "id": "myS3InputDir",
       "description": "S3 directory where the run executable lives",
@@ -59,7 +69,7 @@
     },
     {
       "id": "myStartDateTime",
-      "description": "Instant for the first run; Pipelayer will add multiples of mySchedulePeriod to ensure this instant is in the future",
+      "description": "Instant for the first run; Pipewelder will add multiples of mySchedulePeriod to ensure this instant is in the future",
       "type": "String"
     },
     {

@@ -26,7 +26,7 @@ def data_path(path):
 def test_pipewelder_configs():
     configs = pipewelder_configs(data_path('pipewelder.cfg'))
     assert configs == [{
-        "name": "Pipelayer",
+        "name": "Pipewelder",
         "dirs": ["echoer"],
         "region": "us-west-2",
         "template": "pipeline_definition.json",

@@ -1,4 +1,4 @@
-Pipelayer Command-Line Interface
+Pipewelder Command-Line Interface
 ================================
 
 .. automodule:: pipewelder.cli

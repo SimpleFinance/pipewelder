@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-The core Pipelayer API.
+The core Pipewelder API.
 """
 
 from __future__ import print_function
@@ -26,17 +26,17 @@ else:
 
 PIPELINE_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 PIPELINE_FREQUENCY_RE = re.compile(r'(?P<number>\d+) (?P<unit>\w+s)')
-PIPELAYER_STUB_PARAMS = {
-    'name': "Pipelayer validation stub",
+PIPEWELDER_STUB_PARAMS = {
+    'name': "Pipewelder validation stub",
     'unique_id': 'stub',
     "description": """
 This pipeline should always be in 'PENDING' status.
-It is used by Pipelayer to validate pipeline definitions.
+It is used by Pipewelder to validate pipeline definitions.
     """.strip()
 }
 
 
-class Pipelayer(object):
+class Pipewelder(object):
     """
     A collection of Pipelines sharing a definition template.
     """
@@ -119,10 +119,9 @@ class Pipeline(object):
         values_path = os.path.join(dirpath, 'values.json')
         with open(values_path) as f:
             decoded = json.load(f)
-        metadata = decoded.get('metadata', {})
         self.values = decoded.get('values', {})
-        self.name = metadata.get('name', os.path.basename(dirpath))
-        self.description = metadata.get('description', None)
+        self.name = self.values.get('myName', os.path.basename(dirpath))
+        self.description = self.values.get('myDescription', None)
         timestamp = self.values['myStartDateTime']
         period = self.values['mySchedulePeriod']
         adjusted_timestamp = adjusted_to_future(timestamp, period)
@@ -163,7 +162,7 @@ class Pipeline(object):
         """
         Returns ``True`` if the pipeline definition validates to AWS.
         """
-        response = self.conn.create_pipeline(**PIPELAYER_STUB_PARAMS)
+        response = self.conn.create_pipeline(**PIPEWELDER_STUB_PARAMS)
         pipeline_id = response["pipelineId"]
         response = self.conn.validate_pipeline_definition(
             self.api_objects(), pipeline_id,
@@ -345,3 +344,17 @@ def definition_from_id(conn, pipeline_id):
     """
     response = conn.get_pipeline_definition(pipeline_id)
     return translator.api_to_definition(response)
+
+
+def parsed_objects(conn, pipeline_id, object_ids):
+    """
+
+    """
+    return conn.describe_objects(object_ids, pipeline_id, evaluate_expressions=True)
+
+
+def parsed_object(conn, pipeline_id, object_id):
+    """
+
+    """
+    conn.describe_objects([object_id], pipeline_id, evaluate_expressions=True)

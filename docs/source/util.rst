@@ -1,4 +1,4 @@
-Pipelayer Util
+Pipewelder Util
 ==============
 
 .. automodule:: pipewelder.util
