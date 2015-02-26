@@ -1,11 +1,10 @@
 Pipewelder
 ==========
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
+   README
    core
    util
    cli

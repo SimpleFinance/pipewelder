@@ -8,7 +8,7 @@ Information describing the project.
 package = 'pipewelder'
 project = "Pipewelder"
 project_no_spaces = project.replace(' ', '')
-version = '0.1'
+version = '0.1.2'
 description = 'Scheduled task execution on top of AWS Data Pipeline'
 authors = ['Jeff Klukas']
 authors_string = ', '.join(authors)

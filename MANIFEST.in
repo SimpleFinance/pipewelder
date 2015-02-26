@@ -1,5 +1,6 @@
 # Informational files
 include README.rst
+include welder.jpg
 include LICENSE
 include NOTICE
 
