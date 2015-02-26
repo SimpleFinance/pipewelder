@@ -61,7 +61,7 @@ author.
 Development
 -----------
 
-To do development on Pipewelder, clone the repository and run `make`
+To do development on Pipewelder, clone the repository and run ``make``
 to install dependencies and run tests.
 
 Directory Structure
