@@ -311,6 +311,7 @@ class Pipeline(object):
         obj = self._parsed_object(name)
         fetch_field_value(obj, 'directoryPath')
 
+
 def bucket_and_path(s3_uri):
     """
     Return a bucket name and key path from *s3_uri*.
@@ -412,14 +413,15 @@ def definition_from_id(conn, pipeline_id):
 
 def parsed_objects(conn, pipeline_id, object_ids):
     """
-
+    Return a list of object dicts as evaluated by Data Pipeline.
     """
     response = conn.describe_objects(object_ids, pipeline_id,
                                      evaluate_expressions=True)
     return response['pipelineObjects']
 
+
 def parsed_object(conn, pipeline_id, object_id):
     """
-
+    Return an object dict as evaluated by Data Pipeline.
     """
     return parsed_objects(conn, pipeline_id, [object_id])[0]

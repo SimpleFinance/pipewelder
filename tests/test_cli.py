@@ -24,13 +24,16 @@ def data_path(path):
 
 
 def test_pipewelder_configs():
-    configs = pipewelder_configs(data_path('pipewelder.cfg'))
-    assert configs == [{
-        "name": "Pipewelder",
+    configs = pipewelder_configs(data_path('pipewelder.json'))
+    assert configs["dev"] == {
+        "name": "dev",
         "dirs": ["echoer"],
         "region": "us-west-2",
         "template": "pipeline_definition.json",
-    }]
+        "values": {
+            "myEnv": "dev"
+        }
+    }
 
 
 class TestMain(object):

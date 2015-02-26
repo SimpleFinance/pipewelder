@@ -82,7 +82,8 @@ URL: <{url}>
     if 'AWS_DEFAULT_REGION' in os.environ:
         defaults['region'] = os.environ['AWS_DEFAULT_REGION']
 
-    config_path = os.path.exists('pipewelder.json') and 'pipewelder.json' or None
+    config_path = (os.path.exists('pipewelder.json') and
+                   'pipewelder.json' or None)
     configs = pipewelder_configs(config_path, defaults)
     print("Reading configuration from {}".format(config_path))
 
@@ -93,20 +94,9 @@ URL: <{url}>
             continue
         print("Acting on configuration '{0}'".format(name))
         conn = boto.datapipeline.connect_to_region(config['region'])
-        try:
-            pw = Pipewelder(conn, config['template'])
-        except IOError as e:
-            print(e)
+        pw = build_pipewelder(conn, config)
+        if not execute_pipewelder_action(pw, args.action):
             return 1
-        for d in config['dirs']:
-            p = pw.add_pipeline(d)
-            for k, v in config["values"].items():
-                p.values[k] = v
-            return_value = call_method(pw, args.action)
-            if not return_value:
-                print("Failed '{}' action for {}"
-                      .format(args.action, config['name']))
-                return 1
 
     return 0
 
@@ -116,6 +106,30 @@ def entry_point():
     Zero-argument entry point for use with setuptools/distribute.
     """
     raise SystemExit(main(sys.argv))
+
+
+def build_pipewelder(conn, config):
+    """
+    Return a Pipewelder object defined by *config*.
+    """
+    try:
+        pw = Pipewelder(conn, config['template'])
+    except IOError as e:
+        print(e)
+        return 1
+    for d in config['dirs']:
+        p = pw.add_pipeline(d)
+        for k, v in config["values"].items():
+            p.values[k] = v
+    return pw
+
+
+def execute_pipewelder_action(pw, action):
+    return_value = call_method(pw, action)
+    if not return_value:
+        print("Failed '{}' action for {}"
+              .format(action, pw.name))
+    return return_value
 
 
 def pipewelder_configs(filename=None, defaults=None):
@@ -141,7 +155,7 @@ def pipewelder_configs(filename=None, defaults=None):
         if name == 'defaults':
             continue
         this_config = dict(list(defaults.items()) +
-                           data[name].items())
+                           list(data[name].items()))
         dirs = []
         with util.cd(dirname):
             for entry in this_config['dirs']:
