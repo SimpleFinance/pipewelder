@@ -26,6 +26,7 @@ else:
 
 PIPELINE_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 PIPELINE_FREQUENCY_RE = re.compile(r'(?P<number>\d+) (?P<unit>\w+s)')
+PIPELINE_PARAM_RE = re.compile(r'\#\{(my[a-zA-Z0-9]+)\}')
 PIPEWELDER_STUB_PARAMS = {
     'name': "Pipewelder validation stub",
     'unique_id': 'stub',
@@ -86,6 +87,22 @@ class Pipewelder(object):
         """
         return all([p.upload() for p in self.pipelines.values()])
 
+    def delete(self):
+        """
+        Delete all pipeline definitions.
+
+        Returns ``True`` if successful.
+        """
+        return all([p.delete() for p in self.pipelines.values()])
+
+    def put_definition(self):
+        """
+        Puts definitions for all pipelines.
+
+        Returns ``True`` if successful.
+        """
+        return all([p.put_definition() for p in self.pipelines.values()])
+
     def activate(self):
         """
         Activate all pipeline definitions,
@@ -122,6 +139,8 @@ class Pipeline(object):
         self.values = decoded.get('values', {})
         self.name = self.values.get('myName', os.path.basename(dirpath))
         self.description = self.values.get('myDescription', None)
+        self.tags = dict([tag_expression.split(':') for tag_expression in
+                          self.values.get('myTags', [])])
         timestamp = self.values['myStartDateTime']
         period = self.values['mySchedulePeriod']
         adjusted_timestamp = adjusted_to_future(timestamp, period)
@@ -148,6 +167,14 @@ class Pipeline(object):
         d = {'values': self.values}
         return translator.definition_to_parameter_values(d)
 
+    def api_tags(self):
+        """
+        Return a list containing the pipeline tags in AWS API format.
+        """
+        tag_list = [{'key': k, 'value': v}
+                    for k, v in self.tags.items()]
+        return tag_list
+
     def create(self):
         """
         Create a pipeline in AWS if it does not already exist.
@@ -155,7 +182,7 @@ class Pipeline(object):
         Returns the pipeline id.
         """
         response = self.conn.create_pipeline(self.name, self.unique_id,
-                                             self.description)
+                                             self.description, self.api_tags())
         return response['pipelineId']
 
     def is_valid(self):
@@ -184,7 +211,7 @@ class Pipeline(object):
 
         Returns ``True`` if successful.
         """
-        s3_dir = self.values['myS3InputDir']
+        s3_dir = self._parsed_via_parameters(self.values['myS3InputDir'])
         bucket_path, input_dir = bucket_and_path(s3_dir)
         bucket = self.s3_conn.get_bucket(bucket_path)
 
@@ -208,6 +235,31 @@ class Pipeline(object):
                                              os.path.join(s3_dir, filepath))))
         return True
 
+    def delete(self):
+        """
+        Delete this pipeline definition from AWS.
+
+        Returns ``True`` if successful.
+        """
+        pipeline_id = self.create()
+        logging.info("Deleting pipeline with id {0}".format(pipeline_id))
+        self.conn.delete_pipeline(pipeline_id)
+        return True
+
+    def put_definition(self):
+        """
+        Put this pipeline definition to AWS.
+
+        Returns ``True`` if successful.
+        """
+        pipeline_id = self.create()
+        logging.info("Putting pipeline definition for {0}".format(pipeline_id))
+        self.conn.put_pipeline_definition(self.api_objects(),
+                                          pipeline_id,
+                                          self.api_parameters(),
+                                          self.api_values())
+        return True
+
     def activate(self):
         """
         Activate this pipeline definition in AWS.
@@ -221,15 +273,11 @@ class Pipeline(object):
         state = state_from_id(self.conn, pipeline_id)
         if existing_definition == self.definition:
             return True
-        elif state != 'PENDING':
-            logging.info("Deleting pipeline with id {0}".format(pipeline_id))
-            self.conn.delete_pipeline(pipeline_id)
+        elif state == 'PENDING':
+            self.put_definition()
+        else:
+            self.delete()
             return self.activate()
-        logging.debug("Putting pipeline definition")
-        self.conn.put_pipeline_definition(self.api_objects(),
-                                          pipeline_id,
-                                          self.api_parameters(),
-                                          self.api_values())
         logging.info("Activating pipeline with id {0}".format(pipeline_id))
         self.conn.activate_pipeline(pipeline_id)
         return True
@@ -246,6 +294,22 @@ class Pipeline(object):
             for message in container['errors']:
                 logging.error(message)
 
+    def _parsed_via_parameters(self, expression):
+        placeholders = re.findall(PIPELINE_PARAM_RE, expression)
+        if not placeholders:
+            return expression
+        key = placeholders[0]
+        value = self.values[key]
+        placeholder = '#{' + key + '}'
+        expression = expression.replace(placeholder, value)
+        return self._parsed_via_parameters(expression)
+
+    def _parsed_object(self, name):
+        return parsed_object(self.conn, self.create(), name)
+
+    def _parsed_location(self, name):
+        obj = self._parsed_object(name)
+        fetch_field_value(obj, 'directoryPath')
 
 def bucket_and_path(s3_uri):
     """
@@ -350,11 +414,12 @@ def parsed_objects(conn, pipeline_id, object_ids):
     """
 
     """
-    return conn.describe_objects(object_ids, pipeline_id, evaluate_expressions=True)
-
+    response = conn.describe_objects(object_ids, pipeline_id,
+                                     evaluate_expressions=True)
+    return response['pipelineObjects']
 
 def parsed_object(conn, pipeline_id, object_id):
     """
 
     """
-    conn.describe_objects([object_id], pipeline_id, evaluate_expressions=True)
+    return parsed_objects(conn, pipeline_id, [object_id])[0]

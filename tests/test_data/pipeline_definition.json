@@ -41,20 +41,28 @@
       "type" : "S3DataNode"
     }
   ],
+
   "parameters" : [
     {
       "id": "myName",
-      "description": "A unique name for this pipeline",
+      "description": "A unique name for this pipeline, passed to CreatePipeline",
       "type": "String"
     },
     {
       "id": "myDescription",
-      "description": "A description associated with this pipeline in AWS",
+      "description": "A description of this pipeline, passed to CreatePipeline",
       "type": "String"
     },
     {
+      "id": "myTags",
+      "description": "A list of tag:value pairs, passed to CreatePipeline",
+      "default": [],
+      "type": "String",
+      "isArray": "True"
+    },
+    {
       "id": "myS3InputDir",
-      "description": "S3 directory where the run executable lives",
+      "description": "S3 directory where the run executable lives, destination for Pipewelder 'upload' commands",
       "type": "AWS::S3::ObjectKey"
     },
     {

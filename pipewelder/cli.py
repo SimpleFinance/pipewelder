@@ -60,27 +60,18 @@ URL: <{url}>
         'action',
         help="""Action to take:
         'validate' pipeline definitions with AWS;
-        'upload' pipeline files to S3;
-        'activate' defined pipelines
+        'put-definition' of pipelines to AWS;
+        'upload' pipeline files to myInputS3Dir;
+        'activate' defined pipelines (also puts definitions if needed);
+        'delete' pipelines from AWS
         """)
     parser.add_argument(
         '--group',
         default=None,
         help="Group within pipewelder.json to act on; defaults to all")
 
-    # subparsers = parser.add_subparsers(dest='parser',
-    #                                    help='sub-command help')
-    # subparsers.add_parser(
-    #     'validate', help="validate pipeline definitions with AWS"
-    # ).set_defaults(method='validate')
-    # subparsers.add_parser(
-    #     'upload', help="upload pipeline files to S3"
-    # ).set_defaults(method='upload')
-    # subparsers.add_parser(
-    #     'activate', help="activate all defined pipelines"
-    # ).set_defaults(method='activate')
-
     args = parser.parse_args(args=argv[1:])
+    args.action = args.action.replace('-', '_')
 
     defaults = {}
 
@@ -111,7 +102,6 @@ URL: <{url}>
             p = pw.add_pipeline(d)
             for k, v in config["values"].items():
                 p.values[k] = v
-            print(p.values)
             return_value = call_method(pw, args.action)
             if not return_value:
                 print("Failed '{}' action for {}"

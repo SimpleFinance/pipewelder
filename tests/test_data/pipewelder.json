@@ -10,12 +10,6 @@
     "values" : {
       "myEnv" : "dev"
     }
-  },
-
-  "prod" : {
-    "values" : {
-      "myEnv" : "prod"
-    }
   }
 
 }
