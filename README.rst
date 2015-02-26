@@ -41,7 +41,7 @@ Installation
 ------------
 
 Pipewelder is available from `PyPI <https://pypi.python.org/pypi>`__ via
-``pip``:
+``pip`` and is compatible with Python 2.6, 2.7, 3.3, and 3.4:
 
 ::
 
@@ -57,6 +57,12 @@ the example project from Pipewelder's tests, and then modify to suit:
 
 If you're setting up Pipewelder and need help, feel free to email the
 author.
+
+Development
+-----------
+
+To do development on Pipewelder, clone the repository and run `make`
+to install dependencies and run tests.
 
 Directory Structure
 -------------------
