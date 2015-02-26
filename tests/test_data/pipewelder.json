@@ -1,0 +1,15 @@
+{
+
+  "defaults" : {
+    "dirs" : ["*"],
+    "region" : "us-west-2",
+    "template" : "pipeline_definition.json"
+  },
+
+  "dev" : {
+    "values" : {
+      "myEnv" : "dev"
+    }
+  }
+
+}

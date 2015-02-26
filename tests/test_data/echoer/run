@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+import os
+from glob import glob
+from shutil import copyfile
+
+OUTPUT_DIR = os.environ['OUTPUT1_STAGING_DIR']
+
+
+def write_to_output_dir(task_path):
+    basename = os.path.basename(task_path)
+    destination = os.path.join(OUTPUT_DIR, basename)
+    copyfile(task_path, destination)
+
+
+def main():
+    print("Echoer writes some files to", OUTPUT_DIR)
+    for txtfile in glob("tasks/*.txt"):
+        write_to_output_dir(txtfile)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,11 +1,14 @@
-Pipelayer
-=========
+Pipewelder
+==========
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   core
+   util
+   cli
 
 .. only:: html
 

@@ -1,0 +1,1 @@
+This text should also appear in the output directory.

@@ -1,0 +1,95 @@
+{
+  "objects" : [
+    {
+      "id" : "Default",
+      "scheduleType" : "cron",
+      "failureAndRerunMode" : "CASCADE",
+      "schedule" : { "ref" : "PipewelderSchedule" },
+      "pipelineLogUri" : "#{myS3LogDir}",
+      "role" : "DataPipelineDefaultRole",
+      "resourceRole" : "DataPipelineDefaultResourceRole"
+    },
+    {
+      "id" : "PipewelderShellCommandActivity",
+      "command" : "(cd ${INPUT1_STAGING_DIR} && chmod +x run && ./run) > ${OUTPUT1_STAGING_DIR}/stdout.txt",
+      "runsOn" : { "ref" : "PipewelderEC2Resource" },
+      "input"  : { "ref" : "PipewelderS3InputLocation" },
+      "output" : { "ref" : "PipewelderS3OutputLocation" },
+      "type" : "ShellCommandActivity",
+      "stage" : "true"
+    },
+    {
+      "id" : "PipewelderSchedule",
+      "startDateTime" : "#{myStartDateTime}",
+      "type" : "Schedule",
+      "period" : "#{mySchedulePeriod}"
+    },
+    {
+      "id" : "PipewelderEC2Resource",
+      "terminateAfter" : "#{myTerminateAfter}",
+      "instanceType" : "t1.micro",
+      "type" : "Ec2Resource"
+    },
+    {
+      "id" : "PipewelderS3InputLocation",
+      "directoryPath" : "#{myS3InputDir}",
+      "type" : "S3DataNode"
+    },
+    {
+      "id" : "PipewelderS3OutputLocation",
+      "directoryPath" : "#{myS3OutputDir}/#{format(@scheduledStartTime, 'YYYY-MM-dd_HHmmss')}",
+      "type" : "S3DataNode"
+    }
+  ],
+
+  "parameters" : [
+    {
+      "id": "myName",
+      "description": "A unique name for this pipeline, passed to CreatePipeline",
+      "type": "String"
+    },
+    {
+      "id": "myDescription",
+      "description": "A description of this pipeline, passed to CreatePipeline",
+      "type": "String"
+    },
+    {
+      "id": "myTags",
+      "description": "A list of tag:value pairs, passed to CreatePipeline",
+      "default": [],
+      "type": "String",
+      "isArray": "True"
+    },
+    {
+      "id": "myS3InputDir",
+      "description": "S3 directory where the run executable lives, destination for Pipewelder 'upload' commands",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "id": "myS3OutputDir",
+      "description": "S3 directory where output files are collected",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "id": "myS3LogDir",
+      "description": "S3 log folder",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "id": "myStartDateTime",
+      "description": "Instant for the first run; Pipewelder will add multiples of mySchedulePeriod to ensure this instant is in the future",
+      "type": "String"
+    },
+    {
+      "id": "mySchedulePeriod",
+      "description": "How often to run, such as '1 hours'",
+      "type": "String"
+    },
+    {
+      "id": "myTerminateAfter",
+      "default": "#{format(minusMinutes(#{mySchedulePeriod}, 10))}",
+      "description": "duration after which the run should be terminated",
+      "type": "String"
+    }
+  ]
+}
