@@ -20,10 +20,19 @@ task definitions to S3, and activate your pipelines.
 
 ## Installation
 
-Pipewelder is (will be...) available from PyPI:
+Pipewelder is available from [PyPI](https://pypi.python.org/pypi) via `pip`:
 ```
 pip install pipewelder
 ```
+
+The easiest way to get started is to clone the project from GitHub, copy
+the example project from Pipewelder's tests, and then modify to suit:
+```bash
+git clone https://github.com/SimpleFinance/pipewelder.git
+cp -r pipewelder/tests/test_data my-pipewelder-project
+```
+
+If you're setting up Pipewelder and need help, feel free to email the author.
 
 ## Directory Structure
 
@@ -33,6 +42,7 @@ The directory structure looks like this
 (see [test_data](tests/test_data) for a working example):
 ```
 pipeline_definition.json
+pipewelder.json <- optional configuration file
 my_first_pipeline/
     run
     values.json
@@ -43,13 +53,13 @@ my_second_pipeline/
 ...
 ```
 
-The `values.json` file in each pipeline directory specifies some metadata
-(a name and description for the pipeline) along with parameter values
-that can be used to modify the template definition.
-Those parameter values include the S3 paths for inputs, outputs, and logs.
+The `values.json` file in each pipeline directory specifies parameter values
+that are used modify the template definition
+including the S3 paths for inputs, outputs, and logs.
+Some of these values are used directly by Pipewelder as well.
 
 A [`ShellCommandActivity`](http://docs.aws.amazon.com/datapipeline/latest/DeveloperGuide/dp-object-shellcommandactivity.html) in the template definition simply looks for an executable file named `run` and executes it.
-`run` is where you put the main logic for your pipeline.
+`run` is the entry point for whatever work you want your pipeline to do.
 
 Often, your `run` executable will be a wrapper script to execute a variety of similar tasks.
 When that's the case, use the `tasks` subdirectory to hold these definitions.

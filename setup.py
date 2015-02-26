@@ -247,17 +247,22 @@ setup_dict = dict(
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     packages=find_packages(exclude=(TESTS_DIRECTORY,)),
     install_requires=[
+        'boto',
+        'six'
     ] + python_version_specific_requires,
     # Allow tests to be run with `python setup.py test'.
     tests_require=[
-        'pytest==2.5.1',
-        'mock==1.0.1',
-        'flake8==2.1.0',
+        'pytest',
+        'mock',
+        'flake8',
     ],
     cmdclass={'test': TestAllCommand},
     zip_safe=False,  # don't use eggs
