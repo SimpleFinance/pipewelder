@@ -11,6 +11,15 @@ API to manage `AWS Data
 Pipeline <http://aws.amazon.com/datapipeline/>`__ jobs from flat files.
 Simple uses it as a cron-like job scheduler.
 
+Source
+  https://github.com/SimpleFinance/pipewelder
+
+Documentation
+  http://pipewelder.readthedocs.org
+
+PyPI
+  https://pypi.python.org/pypi/pipewelder
+
 Overview
 --------
 
