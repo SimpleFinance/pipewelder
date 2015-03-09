@@ -4,8 +4,6 @@ Pipewelder
 .. figure:: welder.jpg
    :alt: A worker welding a pipe
 
-   A worker welding a pipe
-
 Pipewelder is a framework that provides a command-line tool and Python
 API to manage `AWS Data
 Pipeline <http://aws.amazon.com/datapipeline/>`__ jobs from flat files.

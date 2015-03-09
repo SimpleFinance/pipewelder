@@ -7,8 +7,8 @@ from __future__ import print_function
 
 import re
 import os
-import json
 import logging
+import hashlib
 from copy import deepcopy
 from datetime import datetime, timedelta
 
@@ -132,19 +132,38 @@ class Pipeline(object):
         self.s3_conn = s3_conn
         self.dirpath = os.path.normpath(dirpath)
         self.definition = template.copy()
-        self.unique_id = 'unique_id'
         values_path = os.path.join(dirpath, 'values.json')
-        with open(values_path) as f:
-            decoded = json.load(f)
+        decoded = util.load_json(values_path)
         self.values = decoded.get('values', {})
-        self.name = self.values.get('myName', os.path.basename(dirpath))
-        self.description = self.values.get('myDescription', None)
-        self.tags = dict([tag_expression.split(':') for tag_expression in
-                          self.values.get('myTags', [])])
+        if 'myName' not in self.values:
+            self.values['myName'] = os.path.basename(dirpath)
+        # adjust the start timestamp to the future
         timestamp = self.values['myStartDateTime']
         period = self.values['mySchedulePeriod']
         adjusted_timestamp = adjusted_to_future(timestamp, period)
         self.values['myStartDateTime'] = adjusted_timestamp
+
+    @property
+    def name(self):
+        return self._get_value('myName')
+
+    @property
+    def description(self):
+        try:
+            return self._get_value('myDescription')
+        except ValueError:
+            return None
+
+    @property
+    def tags(self):
+        if 'myTags' not in self.values:
+            return {}
+        return dict(tag_expression.split(':')
+                    for tag_expression in self.values['myTags'])
+
+    @property
+    def unique_id(self):
+        return hashlib.md5(self.name + str(self.tags)).hexdigest()
 
     def api_objects(self):
         """
@@ -211,7 +230,7 @@ class Pipeline(object):
 
         Returns ``True`` if successful.
         """
-        s3_dir = self._parsed_via_parameters(self.values['myS3InputDir'])
+        s3_dir = self._get_value('myS3InputDir')
         bucket_path, input_dir = bucket_and_path(s3_dir)
         bucket = self.s3_conn.get_bucket(bucket_path)
 
@@ -294,12 +313,22 @@ class Pipeline(object):
             for message in container['errors']:
                 logging.error(message)
 
+    def _get_value(self, key):
+        if key in self.values:
+            return self._parsed_via_parameters(self.values[key])
+        params = self.definition['parameters']
+        default = fetch_default(params, key)
+        if default is None:
+            raise ValueError("No value or default found for '{0}'"
+                             .format(key))
+        return self._parsed_via_parameters(default)
+
     def _parsed_via_parameters(self, expression):
         placeholders = re.findall(PIPELINE_PARAM_RE, expression)
         if not placeholders:
             return expression
         key = placeholders[0]
-        value = self.values[key]
+        value = self._get_value(key)
         placeholder = '#{' + key + '}'
         expression = expression.replace(placeholder, value)
         return self._parsed_via_parameters(expression)
@@ -365,7 +394,7 @@ def adjusted_to_future(timestamp, period):
 
 def fetch_field_value(aws_response, field_name):
     """
-    Return a value nested within the 'fields' of entry of dict *aws_response*.
+    Return a value nested within the 'fields' entry of dict *aws_response*.
 
     The returned value is the second item from a dict with 'key' *field_name*.
 
@@ -380,6 +409,24 @@ def fetch_field_value(aws_response, field_name):
                     return v
     raise ValueError("Did not find a field called {0} in response {1}"
                      .format(field_name, aws_response))
+
+
+def fetch_default(params, key):
+    """
+    Return the default associated with *key* from parameter list *params*.
+
+    If no default, returns None.
+    >>> p = [{'type': 'String', 'id': 'myParam', 'default': 'foo'}]
+    >>> fetch_default(p, 'myParam')
+    'foo'
+    >>> p = [{'type': 'String', 'id': 'myParam'}]
+    >>> fetch_default(p, 'myParam')
+    """
+    for container in params:
+        if container['id'] == key:
+            if 'default' in container:
+                return container['default']
+    return None
 
 
 def state_from_id(conn, pipeline_id):
@@ -397,8 +444,7 @@ def definition_from_file(filename):
     """
     Return a dict containing the contents of pipeline definition *filename*.
     """
-    with open(filename) as f:
-        return json.load(f)
+    return util.load_json(filename)
 
 
 def definition_from_id(conn, pipeline_id):

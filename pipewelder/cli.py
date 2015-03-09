@@ -10,7 +10,6 @@ import argparse
 import os
 import sys
 import boto.datapipeline
-import json
 
 from glob import glob
 
@@ -85,7 +84,7 @@ URL: <{url}>
     config_path = (os.path.exists('pipewelder.json') and
                    'pipewelder.json' or None)
     configs = pipewelder_configs(config_path, defaults)
-    print("Reading configuration from {}".format(config_path))
+    print("Reading configuration from {0}".format(config_path))
 
     for name, config in configs.items():
         if args.group and args.group != name:
@@ -127,8 +126,8 @@ def build_pipewelder(conn, config):
 def execute_pipewelder_action(pw, action):
     return_value = call_method(pw, action)
     if not return_value:
-        print("Failed '{}' action for {}"
-              .format(action, pw.name))
+        print("Failed '{0}' action"
+              .format(action))
     return return_value
 
 
@@ -143,8 +142,7 @@ def pipewelder_configs(filename=None, defaults=None):
         dirname = os.path.abspath('.')
     else:
         dirname = os.path.dirname(os.path.abspath(filename))
-        with open(filename) as f:
-            data = json.load(f)
+        data = util.load_json(filename)
     defaults = defaults or {}
     data_defaults = data.get('defaults', {})
     defaults = dict(list(CONFIG_DEFAULTS.items()) +
@@ -160,7 +158,7 @@ def pipewelder_configs(filename=None, defaults=None):
         with util.cd(dirname):
             for entry in this_config['dirs']:
                 for item in glob(entry):
-                    if os.path.isdir(item):
+                    if os.path.exists(os.path.join(item, 'values.json')):
                         dirs.append(item)
         outputs[name] = {
             "name": name,
